@@ -2,28 +2,52 @@
 import { ref } from 'vue'
 
 const users = ref([])
-const showUsers = ref(false)
+const selectedUser = ref(null)
 const loading = ref(false)
 const error = ref(null)
+const showUsers = ref(false)
 
 const loadUsers = async () => {
   loading.value = true
   error.value = null
   showUsers.value = true
+  selectedUser.value = null
 
   try {
     const res = await fetch('https://reqres.in/api/users', {
-      headers: {
-        'x-api-key': 'reqres-free-v1',
-      },
+      headers: { 'x-api-key': 'reqres-free-v1' },
     })
+    if (!res.ok) throw new Error('Ошибка загрузки пользователей')
     const data = await res.json()
     users.value = data.data
-  } catch (err) {
-    error.value = 'Ошибка при загрузке пользователей'
+  } catch (e) {
+    error.value = e.message
   } finally {
     loading.value = false
   }
+}
+
+const fetchUserById = async (id) => {
+  loading.value = true
+  error.value = null
+
+  try {
+    const res = await fetch(`https://reqres.in/api/users/${id}`, {
+      headers: { 'x-api-key': 'reqres-free-v1' },
+    })
+    if (!res.ok) throw new Error('Ошибка загрузки пользователя')
+    const data = await res.json()
+    selectedUser.value = data.data
+  } catch (e) {
+    error.value = e.message
+  } finally {
+    loading.value = false
+  }
+}
+
+const resetView = () => {
+  selectedUser.value = null
+  error.value = null
 }
 </script>
 
@@ -52,11 +76,16 @@ const loadUsers = async () => {
     <div v-if="loading" class="text-gray-600 mt-4">Загрузка...</div>
     <div v-if="error" class="text-red-600 mt-4">{{ error }}</div>
 
-    <div v-if="showUsers" id="user-list" class="grid sm:grid-cols-2 md:grid-cols-3 gap-4 mt-6">
+    <div
+      v-if="showUsers && !selectedUser"
+      id="user-list"
+      class="grid sm:grid-cols-2 md:grid-cols-3 gap-4 mt-6"
+    >
       <div
         v-for="user in users"
         :key="user.id"
-        class="bg-white p-4 rounded shadow flex items-center space-x-4"
+        class="bg-white p-4 rounded shadow flex items-center space-x-4 cursor-pointer hover:bg-blue-50"
+        @click="fetchUserById(user.id)"
       >
         <img :src="user.avatar" :alt="user.first_name" class="w-16 h-16 rounded-full" />
         <div>
@@ -65,6 +94,29 @@ const loadUsers = async () => {
         </div>
       </div>
     </div>
+
+    <section
+      v-if="selectedUser"
+      class="bg-white p-6 rounded shadow flex items-center space-x-6 w-full"
+    >
+      <img
+        :src="selectedUser.avatar"
+        :alt="selectedUser.first_name"
+        class="w-24 h-24 rounded-full"
+      />
+      <div>
+        <h2 class="text-2xl font-bold mb-1">
+          {{ selectedUser.first_name }} {{ selectedUser.last_name }}
+        </h2>
+        <p class="text-gray-700 mb-1">Email: {{ selectedUser.email }}</p>
+        <!-- <button
+          @click="resetView"
+          class="mt-4 px-4 py-2 bg-gray-400 text-white rounded hover:bg-gray-500"
+        >
+          Назад
+        </button> -->
+      </div>
+    </section>
   </main>
 </template>
 
