@@ -1,54 +1,33 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 
 const users = ref([])
 const selectedUser = ref(null)
-const loading = ref(false)
-const error = ref(null)
 const showUsers = ref(false)
 
 const loadUsers = async () => {
-  loading.value = true
-  error.value = null
   showUsers.value = true
   selectedUser.value = null
-
-  try {
-    const res = await fetch('https://reqres.in/api/users', {
-      headers: { 'x-api-key': 'reqres-free-v1' },
-    })
-    if (!res.ok) throw new Error('Ошибка загрузки пользователей')
-    const data = await res.json()
-    users.value = data.data
-  } catch (e) {
-    error.value = e.message
-  } finally {
-    loading.value = false
-  }
+  const res = await fetch('https://reqres.in/api/users', {
+    headers: { 'x-api-key': 'reqres-free-v1' },
+  })
+  const data = await res.json()
+  users.value = data.data
 }
 
 const fetchUserById = async (id) => {
-  loading.value = true
-  error.value = null
-
-  try {
-    const res = await fetch(`https://reqres.in/api/users/${id}`, {
-      headers: { 'x-api-key': 'reqres-free-v1' },
-    })
-    if (!res.ok) throw new Error('Ошибка загрузки пользователя')
-    const data = await res.json()
-    selectedUser.value = data.data
-  } catch (e) {
-    error.value = e.message
-  } finally {
-    loading.value = false
-  }
+  const res = await fetch(`https://reqres.in/api/users/${id}`, {
+    headers: { 'x-api-key': 'reqres-free-v1' },
+  })
+  const data = await res.json()
+  selectedUser.value = data.data
 }
 
 const resetView = () => {
   selectedUser.value = null
-  error.value = null
 }
+
+onMounted(loadUsers)
 </script>
 
 <template>
@@ -73,9 +52,6 @@ const resetView = () => {
   </header>
 
   <main class="max-w-5xl mx-auto p-4">
-    <div v-if="loading" class="text-gray-600 mt-4">Загрузка...</div>
-    <div v-if="error" class="text-red-600 mt-4">{{ error }}</div>
-
     <div
       v-if="showUsers && !selectedUser"
       id="user-list"
@@ -109,15 +85,13 @@ const resetView = () => {
           {{ selectedUser.first_name }} {{ selectedUser.last_name }}
         </h2>
         <p class="text-gray-700 mb-1">Email: {{ selectedUser.email }}</p>
-        <!-- <button
+        <button
           @click="resetView"
           class="mt-4 px-4 py-2 bg-gray-400 text-white rounded hover:bg-gray-500"
         >
           Назад
-        </button> -->
+        </button>
       </div>
     </section>
   </main>
 </template>
-
-<style scoped></style>
